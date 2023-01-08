@@ -1,5 +1,5 @@
-const Joi = require("joi");
 const { Schema, model } = require("mongoose");
+const Joi = require("joi");
 
 const contactSchema = Schema(
   {
@@ -17,21 +17,37 @@ const contactSchema = Schema(
       type: Boolean,
       default: false,
     },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: "user",
+      required: true,
+    },
   },
   { versionKey: false, timestamps: true }
 );
 
-const joiSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().required(),
-  phone: Joi.string().required(),
+const contactSchemaJoi = Joi.object({
+  name: Joi.string().min(2).max(30).required(),
+  email: Joi.string().email({
+    minDomainSegments: 2,
+    tlds: { allow: ["com", "net"] },
+  }),
+  phone: Joi.string()
+    .pattern(/^\((\d{3})\)[ ](\d{3})[-](\d{4})$/)
+    .messages({
+      "string.pattern.base": `missing required phone field. Phone number example: (992) 914-3792`,
+    }),
   favorite: Joi.boolean(),
 });
 
-const favoriteJoiSchema = Joi.object({
-  favorite: Joi.boolean(),
+const contactSchemaJoiFavorite = Joi.object({
+  favorite: Joi.boolean().required(),
 });
 
 const Contact = model("contact", contactSchema);
 
-module.exports = { Contact, joiSchema, favoriteJoiSchema };
+module.exports = {
+  Contact,
+  contactSchemaJoi,
+  contactSchemaJoiFavorite,
+};
